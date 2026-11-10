@@ -10,7 +10,8 @@ TG_API_HASH = os.getenv("TG_API_HASH")
 TG_SESSION = os.getenv("TG_SESSION")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-GROQ_MODEL = "llama3-70b-8192"
+# تم تصحيح اسم النموذج هنا
+GROQ_MODEL = "llama-3.3-70b-versatile"
 STATE_FILE = "relay_state.json"
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
