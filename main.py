@@ -10,8 +10,9 @@ TG_API_HASH = os.getenv("TG_API_HASH")
 TG_SESSION = os.getenv("TG_SESSION")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-# تم تصحيح اسم النموذج هنا
-GROQ_MODEL = "llama-3.3-70b-versatile"
+# تم التعديل هنا: استخدام النموذج الجديد والمستقر
+GROQ_MODEL = "openai/gpt-oss-120b"
+
 STATE_FILE = "relay_state.json"
 DOWNLOAD_DIR = "downloads"
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
