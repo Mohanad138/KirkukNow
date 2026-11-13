@@ -22,10 +22,14 @@ CHANNELS = {
         "name": "شكو ماكو بـ كركوك", "target": -1001812867607,
         "source_username": "@kirkukdiary",
         "add_link": True, "link": "https://t.me/KirkukNow24H",
-        "prompt": """أنت محرر صحفي عراقي. أعد صياغة النص بأسلوب صحفي. 
-- انشر أي خبر محلي أو عام (اجعل should_post=true). 
-- إذا كان إعلاناً تجارياً صريحاً (بيع، اشتراك، عروض) اجعل should_post=false.
-- إذا كان النص طويلاً جداً وبلا فائدة، قم باختصاره.
+        "prompt": """أنت محرر ينقل النص من قناة المصدر إلى قناة الهدف.
+قواعد صارمة جداً:
+- لا تعيد صياغة النص إطلاقاً. لا تغيّر الكلمات، لا تغيّر الأسلوب، لا تجعله رسمياً، لا تختصره، لا تضف أي جملة من عندك.
+- احتفظ بالنص كما هو حرفياً (نفس الكلمات، نفس الترتيب، نفس اللهجة).
+- إذا احتاج النص ترتيباً بسيطاً فقط (مثل حذف أسطر فارغة زائدة، أو ضبط المسافات، أو توحيد الفواصل بين الأسطر) فقم بذلك فقط.
+- إذا كان النص منظماً أصلاً، أعده كما هو تماماً دون أي تغيير.
+- انشر أي خبر محلي أو عام (اجعل should_post=true).
+- إذا كان إعلاناً تجارياً صريحاً فقط (بيع، اشتراك، عروض) اجعل should_post=false.
 - لا تذكر اسم قناة المصدر أو روابطها نهائياً."""
     },
 }
@@ -177,22 +181,32 @@ def call_groq(prompt, max_retries=3):
             time.sleep(2 ** attempt)
 
 async def apply_processing(config, text):
+    """
+    ✅ التعديل الجوهري:
+    - الذكاء الاصطناعي يقرر فقط: should_post (نشر / لا)
+    - النص لا يُعاد صياغته أبداً، يُعاد كما هو بعد التنظيف فقط
+    """
     if not text: return {"should_post": True, "text": ""}
     custom_prompt = config.get("prompt", "")
     if not custom_prompt: return {"should_post": True, "text": text}
-    full_prompt = f"""{custom_prompt}
 
-النص المراد معالجته:
-{text}
+    decision_prompt = f"""{custom_prompt}
 
-أعد النتيجة بصيغة JSON فقط: {{"should_post": true/false, "text": "النص المعالج"}}"""
+المطلوب منك الآن فقط: هل يجب نشر النص التالي على القناة؟
+أجب بصيغة JSON فقط بدون أي شرح إضافي: {{"should_post": true}} أو {{"should_post": false}}
+
+النص:
+{text}"""
+
     try:
-        res_raw = call_groq(full_prompt)
+        res_raw = call_groq(decision_prompt)
         if res_raw.startswith("```"):
             res_raw = res_raw.strip("`").strip()
             if res_raw.lower().startswith("json"): res_raw = res_raw[4:].strip()
         res = json.loads(res_raw)
-        return {"should_post": bool(res.get("should_post", True)), "text": (res.get("text") or text).strip()}
+        should_post = bool(res.get("should_post", True))
+        # ✅ النص يبقى كما هو تماماً بدون أي إعادة صياغة
+        return {"should_post": should_post, "text": text}
     except Exception as e:
         print(f"❌ خطأ المعالجة: {e}")
         return {"should_post": False, "text": ""}
